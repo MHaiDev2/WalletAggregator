@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Mvc;
 using Nethereum.Web3;
 using WalletAggregator.Models;
 
@@ -40,22 +41,44 @@ public class WalletController : ControllerBase
         if (request.Addresses == null || !request.Addresses.Any())
             return BadRequest("At least one address must be provided.");
 
+        var ethAddressRegex = new Regex(@"^0x[a-fA-F0-9]{40}$");
+
+        var invalidAddresses = request.Addresses
+            .Where(addr => !ethAddressRegex.IsMatch(addr))
+            .ToList();
+
+        if (invalidAddresses.Any())
+        {
+            return BadRequest(new
+            {
+                error = "One or more addresses are invalid.",
+                invalidAddresses
+            });
+        }
+
         try
         {
             var rpcUrl = "https://rpc-amoy.polygon.technology/";
             var web3 = new Web3(rpcUrl);
 
             decimal totalBalance = 0;
+            var nonZeroAddresses = new List<string>();
 
             foreach (var address in request.Addresses)
             {
                 var balanceWei = await web3.Eth.GetBalance.SendRequestAsync(address);
-                totalBalance += Web3.Convert.FromWei(balanceWei);
+                var balanceEth = Web3.Convert.FromWei(balanceWei);
+
+                if (balanceEth > 0)
+                {
+                    totalBalance += balanceEth;
+                    nonZeroAddresses.Add(address);
+                }
             }
 
             return Ok(new
             {
-                addresses = request.Addresses,
+                addresses = nonZeroAddresses,
                 totalBalance
             });
         }
@@ -64,5 +87,34 @@ public class WalletController : ControllerBase
             return StatusCode(500, $"Error aggregating balances: {ex.Message}");
         }
     }
+
+    [HttpGet("metadata")]
+    public async Task<IActionResult> GetMetadata()
+    {
+        try
+        {
+            var rpcUrl = "https://rpc-amoy.polygon.technology/";
+            var web3 = new Web3(rpcUrl);
+
+            var chainId = await web3.Net.Version.SendRequestAsync();
+            var blockNumber = await web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
+
+            var metadata = new WalletMetadataResponse
+            {
+                NetworkName = "Polygon Amoy Testnet",
+                RpcUrl = rpcUrl,
+                ChainId = chainId,
+                BlockHeight = (ulong)blockNumber.Value
+            };
+
+            return Ok(metadata);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Failed to get network metadata: {ex.Message}");
+        }
+    }
+
+
 
 }
