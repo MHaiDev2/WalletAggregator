@@ -98,7 +98,7 @@ function App() {
     setTotalBalance(null);
     setUiMessage('');
     try {
-      const response = await fetch('https://localhost:7299/api/wallet/aggregate', {
+      const response = await fetch('http://localhost:5143/api/wallet/aggregate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ addresses: wallets })
