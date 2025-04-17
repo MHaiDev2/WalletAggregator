@@ -1,11 +1,7 @@
 # WalletAggregator
 
-# WalletAggregator
-
 ![Aggregated POL Balance](Screenshot.png)
-
-**WalletAggregator** is an application that enables users to aggregate wallet balances and retrieve metadata from blockchain networks. It consists of a **frontend** (React + Vite) and a **backend** (ASP.NET Core).
-
+> *Example: The app connects two wallets (MetaMask and Rabby) and displays the aggregated POL balance (e.g., 3.998 + 5 = 8.998 POL).*
 
 
 **WalletAggregator** is an application that enables users to aggregate wallet balances and retrieve metadata from blockchain networks. It consists of a **frontend** (React + Vite) and a **backend** (ASP.NET Core).
